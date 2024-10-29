@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .cookie-data {
+        display: none; /* Hide cookie data by default */
+      }
+      .cookie-item {
+        font-size: 0.875rem; /* Smaller font size for cookie values */
+        overflow: hidden; /* Hide overflowing text */
+        white-space: nowrap; /* Prevent text wrapping */
+        text-overflow: ellipsis; /* Show ellipsis for overflowing text */
+      }
+      .url-div {
+        transition: background-color 0.2s;
+      }
+      .url-div:hover {
+        background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 p-6">
+    <div id="logs" class="space-y-4"></div>
+    <script>
+      const logs = document.getElementById('logs');
+
+      fetch('/admin')
+        .then((response) => response.json())
+        .then((data) => {
+          data.forEach((i) => {
+            let cookies = JSON.parse(i.cookies); // Parse cookies as JSON
+
+            // Loop through each cookie object in the parsed cookies array
+            cookies.forEach((cookieData) => {
+              if (cookieData && cookieData.url) {
+                // Create a div for each URL and IP
+                const urlDiv = document.createElement('div');
+                urlDiv.className =
+                  'bg-white shadow-md rounded-lg p-4 cursor-pointer url-div'; // Card style
+
+                // Shorten the URL from cookieData if it's longer than 50 characters
+                const shortenedUrl =
+                  cookieData.url.length > 50
+                    ? cookieData.url.slice(0, 50) + '...'
+                    : cookieData.url;
+
+                // Create a clickable header for URL and IP
+                const header = document.createElement('h4');
+                header.className =
+                  'font-bold text-blue-600 cursor-pointer hover:text-blue-800 transition'; // Tailwind styles for clickable text
+                header.innerText = `${shortenedUrl} - ${i.ip}`;
+
+                // Create a container for cookie data
+                const cookieDisplay = document.createElement('div');
+                cookieDisplay.className =
+                  'bg-gray-100 p-2 rounded-lg cookie-data'; // Tailwind styles for cookie display
+
+                // Check if cookies exist
+                if (
+                  Array.isArray(cookieData.cookies) &&
+                  cookieData.cookies.length > 0
+                ) {
+                  // Loop through each cookie in the cookies array
+                  cookieData.cookies.forEach((cookie) => {
+                    // Assuming each cookie is an object with a name and value
+                    const cookieItem = document.createElement('div');
+                    cookieItem.className =
+                      'flex justify-between py-1 cookie-item'; // Flex style for alignment
+                    cookieItem.innerHTML = `<strong>${
+                      cookie.name || 'Unknown'
+                    }:</strong> <span class="text-gray-600">${
+                      cookie.value || 'No Value'
+                    }</span>`; // Display name and value
+                    cookieDisplay.appendChild(cookieItem); // Append each cookie item to the display
+                  });
+                } else {
+                  cookieDisplay.innerText = 'No cookies found'; // Handle case where no cookies are available
+                }
+
+                // Append the header and cookie display to the URL div
+                urlDiv.appendChild(header);
+                urlDiv.appendChild(cookieDisplay);
+
+                // Append the URL div to the logs
+                logs.appendChild(urlDiv);
+
+                // Add click event to toggle visibility of cookie data
+                header.addEventListener('click', (event) => {
+                  event.stopPropagation(); // Prevent the event from bubbling up
+                  cookieDisplay.style.display =
+                    cookieDisplay.style.display === 'none' ? 'block' : 'none';
+                });
+
+                // Also toggle when clicking the entire urlDiv
+                urlDiv.addEventListener('click', () => {
+                  cookieDisplay.style.display =
+                    cookieDisplay.style.display === 'none' ? 'block' : 'none';
+                });
+              }
+            });
+          });
+        })
+        .catch((error) => console.error('Error:', error));
+    </script>
+  </body>
+</html>
